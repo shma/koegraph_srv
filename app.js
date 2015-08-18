@@ -10,9 +10,17 @@ var users = require('./routes/users');
 
 var app = express();
 
-var memcache = require('memcache');
-var client = new memcache.Client(11211, 'localhost');
-client.connect();
+//var memcache = require('memcache');
+//var client = new memcache.Client(11211, 'localhost');
+//client.connect();
+
+var mysql      = require('mysql');
+var connection = mysql.createConnection({
+      host     : 'localhost',
+      user     : 'root',
+      password : '',
+      database : 'kg'
+});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -27,22 +35,34 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', function(req, res) {
-      console.log(req.query.id);
-      console.log(req.query.vol);
+      console.log("Voice Data : " + req.query.vol);
+      var post  = {stick_id: req.query.id, vol: req.query.vol, threshold: req.query.threshold};
+      connection.query('INSERT INTO voices SET ?', post, function(err, rows, fields) {
+            if (err) throw err;
+              console.log(rows[0]);
+      });
+
+      /**
       client.set(req.query.id, req.query.vol, function(error, result){
       }, 3600);
+      **/
       
       res.json('hello world');
 });
 
 app.get('/get', function(req, res) {
+      connection.query('SELECT * FROM `voices` WHERE `stick_id` = ? order by id desc limit 1 ', [req.query.id], function(err, rows, fields) {
+            if (err) throw err;
+            console.log(rows[0]);
+      });
+      /**
       client.get(req.query.id, function(error, result){
         res.send(result);
       }, 3600);
-      
+      **/
+      res.json(row[0]);
 });
 
-app.use('/users', users);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
